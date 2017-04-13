@@ -37,7 +37,7 @@ class SpatialGan(object):
         self.sess = sess
 
         self.batch_size = self.opt.batch_size
-        self.image_size = (2**self.opt.num_layers)*self.opt.z_size
+        self.image_size = (2**self.opt.num_layers)*(self.opt.z_size - 1) + 1
 
         # define the dimensionality of the input tensor for discriminator network
         self.image_shape = [self.image_size, self.image_size, 3]
@@ -63,6 +63,7 @@ class SpatialGan(object):
 
         for i in range(0, self.opt.num_layers - 1):
             self.g_bn_layers.append(BatchNorm(name='g_bn'+str(i+1)))
+
 
     def build_model(self):
         """
@@ -235,8 +236,8 @@ class SpatialGan(object):
             self.g_layers.append(z)
             # upscale image num_layers times
             for i in range(0, self.opt.num_layers - 1):
-                new_h = (2**(i+1))*h
-                new_w = (2**(i+1))*w
+                new_h = (2**(i+1))*(h-1)+1
+                new_w = (2**(i+1))*(w-1)+1
                 out_shape = [self.batch_size, new_h, new_w, self.g_filters[i]]
 
                 # deconvolve / upscale 2 times
@@ -249,8 +250,8 @@ class SpatialGan(object):
             layer, weight = deconvolution(self.g_layers[-1],
                                           [
                                               self.batch_size,
-                                              (2**self.opt.num_layers)*h,
-                                              (2**self.opt.num_layers)*w,
+                                              (2**self.opt.num_layers)*(h-1)+1,
+                                              (2**self.opt.num_layers)*(w-1)+1,
                                               self.g_filters[self.opt.num_layers - 1]
                                           ],
                                           self.opt.num_layers - 1,
