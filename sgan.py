@@ -124,7 +124,7 @@ class SpatialGan(object):
         """
 
         # define optimizer for both networks
-        d_optim = tf.train.GradientDescentOptimizer(self.opt.learning_rate) \
+        d_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.D_loss, var_list=self.D_vars)
 
         g_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
