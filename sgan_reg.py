@@ -19,6 +19,7 @@ class SpatialGan(object):
     GM_loss = None
     DM_net_real = None
     DM_logits_real = None
+    DM_loss = None
     DM_loss_real = None
     DM_loss_fake = None
     DM_net_fake = None
@@ -29,11 +30,26 @@ class SpatialGan(object):
     GD_loss = None
     DD_net_real = None
     DD_logits_real = None
+    DD_loss = None
     DD_loss_real = None
     DD_loss_fake = None
     DD_net_fake = None
     DD_logits_fake = None
     DD_vars = None
+
+    lmr_sum = None
+    lmf_sum = None
+    lmg_sum = None
+    lmt_sum = None
+    img_sum_m = None
+
+    ldr_sum = None
+    ldf_sum = None
+    ldg_sum = None
+    ldt_sum = None
+    img_sum_d = None
+
+    le_sum = None
 
     hyper_params = None
     saver = None
@@ -172,34 +188,34 @@ class SpatialGan(object):
             self.E_vars = [var for var in t_vars if 'e_' in var.name]
             self.G_vars = [var for var in t_vars if 'g_' in var.name]
 
-        self.saver = tf.train.Saver(reshape=True, max_to_keep=self.opt.max_iterations)
+        self.saver = tf.train.Saver()
 
     def train(self):
 
-        # define optimizer for both networks
-        DM_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
+        # define optimizers for all networks
+        dm_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.DM_loss, var_list=self.DM_vars)
 
-        GM_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
+        gm_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.GM_loss, var_list=self.G_vars)
 
-        DD_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
+        dd_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.DD_loss, var_list=self.DD_vars)
 
-        GD_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
+        gd_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.GD_loss, var_list=self.G_vars)
 
-        E_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
+        e_optim = tf.train.AdamOptimizer(self.opt.learning_rate, beta1=self.opt.beta1) \
             .minimize(self.E_loss, var_list=self.E_vars)
 
         tf.global_variables_initializer().run()
 
-        GM_sum = tf.summary.merge([self.lmg_sum, self.img_sum_m])
-        GD_sum = tf.summary.merge([self.ldg_sum, self.img_sum_d])
+        gm_sum = tf.summary.merge([self.lmg_sum, self.img_sum_m])
+        gd_sum = tf.summary.merge([self.ldg_sum, self.img_sum_d])
 
-        DM_sum = tf.summary.merge([self.lmr_sum, self.lmf_sum, self.lmt_sum])
-        DD_sum = tf.summary.merge([self.ldr_sum, self.ldf_sum, self.ldt_sum])
-        E_sum = tf.summary.merge([self.le_sum])
+        dm_sum = tf.summary.merge([self.lmr_sum, self.lmf_sum, self.lmt_sum])
+        dd_sum = tf.summary.merge([self.ldr_sum, self.ldf_sum, self.ldt_sum])
+        e_sum = tf.summary.merge([self.le_sum])
 
         sample_image = np.random.uniform(-1, 1, [self.opt.batch_size]+self.z_dim).astype(np.float32)
         writer = tf.summary.FileWriter(self.opt.checkpoint_dir, self.sess.graph)
@@ -214,13 +230,13 @@ class SpatialGan(object):
             if epoch % 3 == 0:
                 print "Manifold Step: "
                 # Update D network
-                _, summary_str_dm = self.sess.run([DM_optim, DM_sum],
-                                                   feed_dict={
+                _, summary_str_dm = self.sess.run([dm_optim, dm_sum],
+                                                  feed_dict={
                                                        self.real_images: batch_images,
                                                    })
                 # Update G network
-                _, summary_str_gm = self.sess.run([GM_optim, GM_sum],
-                                                   feed_dict={
+                _, summary_str_gm = self.sess.run([gm_optim, gm_sum],
+                                                  feed_dict={
                                                        self.real_images: batch_images,
                                                        self.random_noise: batch_z
                                                })
@@ -230,15 +246,15 @@ class SpatialGan(object):
             elif epoch % 3 == 1:
                 print "Diffusion Step:"
                 # Update D network
-                _, summary_str_dd = self.sess.run([DD_optim, DD_sum],
-                                                   feed_dict={
+                _, summary_str_dd = self.sess.run([dd_optim, dd_sum],
+                                                  feed_dict={
                                                        self.real_images: batch_images,
                                                        self.random_noise: batch_z
                                                    })
 
                 # Update G network
-                _, summary_str_gd = self.sess.run([GD_optim, GD_sum],
-                                                   feed_dict={
+                _, summary_str_gd = self.sess.run([gd_optim, gd_sum],
+                                                  feed_dict={
                                                        self.random_noise: batch_z
                                                    })
                 writer.add_summary(summary_str_dd, epoch)
@@ -247,7 +263,7 @@ class SpatialGan(object):
 
                 print "Encoder Step: "
                 # Update D network
-                _, summary_str_e = self.sess.run([E_optim, E_sum],
+                _, summary_str_e = self.sess.run([e_optim, e_sum],
                                                  feed_dict={
                                                         self.real_images: batch_images,
                                                     })
@@ -290,12 +306,12 @@ class SpatialGan(object):
                     )
                 )
             # last layer
-            logit, weight = convolution(self.e_layers[-1], self.e_filters[-1], name='e_h4_conv')
+            layer, weight = convolution(self.e_layers[-1], self.e_filters[-1], name='e_h4_conv')
             if not reuse:
                 self.e_weights.append(weight)
-            self.e_layers.append(logit)
+            self.e_layers.append(tf.nn.tanh(layer, name='output'))
 
-        return logit
+        return self.e_layers[-1]
 
     def discriminator_manifold(self, image, reuse=False):
         """
@@ -442,8 +458,3 @@ class SpatialGan(object):
         # define the list of important hyper_params
         for name, var in h_dict:
             self.hyper_params += str(name)+'='+str(var)
-
-    # @staticmethod
-    # def gaussian_noise_layer(input_layer, std):
-    #     noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32)
-    #     return input_layer + noise
