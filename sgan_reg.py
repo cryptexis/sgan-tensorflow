@@ -143,7 +143,7 @@ class SpatialGan(object):
 
             self.lmf_sum = tf.summary.scalar("DM_loss_fake", self.DM_loss_fake)
             # ENCODER
-            self.E_loss = tf.reduce_mean(tf.square(self.GM_net - self.real_images))
+            self.E_loss = tf.nn.l2_loss(self.GM_net - self.real_images) / self.batch_size
             # GENERATOR
             self.GM_loss = 0.005*tf.reduce_mean(
                     tf.nn.sigmoid_cross_entropy_with_logits(logits=self.DM_logits_fake,
