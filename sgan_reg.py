@@ -143,7 +143,7 @@ class SpatialGan(object):
 
             self.lmf_sum = tf.summary.scalar("DM_loss_fake", self.DM_loss_fake)
             # ENCODER
-            self.E_loss = tf.reduce_mean(tf.square(self.GM_net - self.real_images))
+            self.E_loss = tf.nn.l2_loss(self.GM_net - self.real_images) / self.batch_size
             # GENERATOR
             self.GM_loss = tf.reduce_mean(
                     tf.nn.sigmoid_cross_entropy_with_logits(logits=self.DM_logits_fake,
@@ -227,7 +227,7 @@ class SpatialGan(object):
 
             batch_images = get_data(self.opt.dataset, self.image_size, self.batch_size)
             batch_z = np.random.uniform(-1, 1, [self.opt.batch_size]+self.z_dim).astype(np.float32)
-            if epoch % 3 == 0:
+            if epoch % 2 == 0:
                 print "Manifold Step: "
                 # Update D network
                 _, summary_str_dm = self.sess.run([dm_optim, dm_sum],
@@ -241,9 +241,14 @@ class SpatialGan(object):
                                                        self.random_noise: batch_z
                                                })
 
+                _, summary_str_e = self.sess.run([e_optim, e_sum],
+                                                 feed_dict={
+                                                     self.real_images: batch_images,
+                                                 })
                 writer.add_summary(summary_str_dm, epoch)
                 writer.add_summary(summary_str_gm, epoch)
-            elif epoch % 3 == 1:
+                writer.add_summary(summary_str_e, epoch)
+            elif epoch % 2 == 1:
                 print "Diffusion Step:"
                 # Update D network
                 _, summary_str_dd = self.sess.run([dd_optim, dd_sum],
@@ -257,17 +262,17 @@ class SpatialGan(object):
                                                   feed_dict={
                                                        self.random_noise: batch_z
                                                    })
-                writer.add_summary(summary_str_dd, epoch)
-                writer.add_summary(summary_str_gd, epoch)
-            else:
-
-                print "Encoder Step: "
-                # Update D network
                 _, summary_str_e = self.sess.run([e_optim, e_sum],
                                                  feed_dict={
-                                                        self.real_images: batch_images,
-                                                    })
+                                                     self.real_images: batch_images,
+                                                 })
+                writer.add_summary(summary_str_dd, epoch)
+                writer.add_summary(summary_str_gd, epoch)
                 writer.add_summary(summary_str_e, epoch)
+            # else:
+            #
+            #     print "Encoder Step: "
+            #     # Update E network
 
             if epoch % self.opt.checkpoint_interval == 0:
 
