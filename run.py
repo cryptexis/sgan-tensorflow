@@ -8,7 +8,6 @@ flags.DEFINE_integer("epoch", 25, "Epoch to train [25]")
 flags.DEFINE_float("learning_rate", 0.0005, "Learning rate of for adam [0.0005]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_float("l2_decay", 1e-5, "L2 regularization weight")
-flags.DEFINE_float("tv_weight", 0, "Total variation weight ~ 1")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
 flags.DEFINE_integer("batch_size", 32, "The size of batch images [64]")
 flags.DEFINE_integer("z_size", 9, "Spatial size of the random noise")
@@ -19,10 +18,10 @@ flags.DEFINE_integer("checkpoint_interval", 15, "Convolutional Kernel Size in th
 flags.DEFINE_integer("num_layers", 5, "Convolutional Kernel Size in the network")
 flags.DEFINE_string("dataset", "./texture", "Dataset directory.")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
-flags.DEFINE_string("model_dir", "./compare/", "Directory name to save the checkpoints [checkpoint]")
+flags.DEFINE_string("model_dir", "./checkpoint_reg/", "Directory name to save the checkpoints [checkpoint]")
 flags.DEFINE_string("sample_dir", "./samples", "Directory name to save the image samples [samples]")
 flags.DEFINE_boolean("is_train", True, "True for training, False for testing [False]")
-flags.DEFINE_boolean("reg", False, "True for training, False for testing [False]")
+flags.DEFINE_boolean("reg", False, "In order to turn on regularization")
 
 # test phase
 flags.DEFINE_integer("generate_samples", 1, "Numbers of samples to generate")
@@ -53,4 +52,4 @@ with tf.Session(config=config) as sess:
         sgan.build_model()
         sgan.train()
     else:
-        visualize_generate(sess, sgan)
+        visualize_generate(sess, sgan, FLAGS.reg)
