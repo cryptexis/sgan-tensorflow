@@ -37,7 +37,7 @@ for metric regularized SGAN
 python run.py --is_train False model_dir /path/to/dir/with/checkpoints --reg True
 ```
 
-## License
+## Results
 This model was trained on a google maps image of barcelona, and yields a texture image like e.g. this
 
 ![](results/test_sgan.jpg)
@@ -45,6 +45,8 @@ This model was trained on a google maps image of barcelona, and yields a texture
 and for metric regularized
 
 ![](results/test_sgan_reg.jpg)
+
+## License
 
 The MIT License (MIT)
 
